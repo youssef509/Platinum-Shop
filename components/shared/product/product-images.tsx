@@ -14,8 +14,8 @@ const ProductImages = ({ images } : { images: string[] }) => {
         width={1000}
         height={1000}
         className="min-h-[300px]"
-        object-cover
-        object-center
+        object-cover="true"
+        object-center="true"
         />
         <div className="flex">
             {images.map((image, index) => (
