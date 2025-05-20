@@ -5,6 +5,8 @@ import { getProductBySlug } from "@/lib/actions/product.actions";
 import { notFound } from "next/navigation";
 import ProductPrice from "@/components/shared/product/product-price";
 import ProductImages from "@/components/shared/product/product-images";
+import AddToCart from "@/components/shared/product/add-to-cart";
+import { getMyCart } from "@/lib/actions/cart.actions";
 
 const ProductDetailsPage = async (props: {
     params: Promise<{ slug: string }>;
@@ -14,6 +16,7 @@ const ProductDetailsPage = async (props: {
     if (!product) {
         notFound();
     }
+    const cart = await getMyCart();
     return <>
         <section>
             <div className="grid grid-cols-1 md:grid-cols-5">
@@ -74,27 +77,21 @@ const ProductDetailsPage = async (props: {
                                     )}
                                 </div>
                             </div>
+                            
                             {product.stock > 0 && (
-                                <>
-                                    <div className="mb-2 flex justify-between">
-                                        <div>Quantity</div>
-                                        <div>
-                                            <input
-                                                type="number"
-                                                defaultValue={1}
-                                                min={1}
-                                                max={product.stock}
-                                                className="w-16 border border-gray-300 rounded-md p-1"
-                                            />
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                            {product.stock > 0 && (
-                                <Button className="w-full mt-4">
-                                    Add to Cart
-                                    </Button>
-                                    )}
+                                <div className="mt-4">
+                                    <AddToCart 
+                                    cart={cart} 
+                                    item={{
+                                        productId: product.id,
+                                        name: product.name,
+                                        slug: product.slug,
+                                        image: product.images![0],
+                                        price: product.price,
+                                        qty: 1
+                                    }} />
+                                </div>
+                             )}
                         </CardContent>
                     </Card>
                 </div>
