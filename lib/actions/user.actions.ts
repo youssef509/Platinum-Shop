@@ -6,7 +6,6 @@ import { hashSync } from "bcrypt-ts-edge";
 import { prisma } from "@/db/prisma";
 import { formatError } from "../utils";
 import { ShippingAddress } from "@/types";
-import { getMyCart } from './cart.actions';
 import { cookies } from "next/headers";
 
 // Sign up the user with credentials
