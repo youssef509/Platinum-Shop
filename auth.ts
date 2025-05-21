@@ -66,6 +66,7 @@ export const config = {
         },
         async jwt({ token, user, trigger, session }: any) {
             if (user) {
+                token.id = user.id;
                 token.role = user.role;
                 if (user.name === "NO_NAME") {
                     token.name = user.email!.split("@")[0];
@@ -78,10 +79,54 @@ export const config = {
                         name: token.name,
                     }
                 });
+                if (trigger === "signIn" || trigger === "signUp") {
+                    const cookiesObject = await cookies();
+                    const sessionCardId = cookiesObject.get('sessionCardId')?.value;
+                    if (sessionCardId) {
+                        const sessionCard = await prisma.cart.findFirst({
+                            where: { sessionCardId }
+                        });
+                        if (sessionCard) {
+                            await prisma.cart.deleteMany({
+                                where: { userId: user.id }
+                            });
+                            await prisma.cart.update({
+                                where: { id: sessionCard.id },
+                                data: { userId: user.id, }
+                            })
+                            // Delete the session cart id cookie
+                            cookiesObject.delete('sessionCardId');
+                        } 
+                    }
+                }
             }
+            // Handel session updates
+            if (session?.user.name && trigger === "update") {
+                token.name = session.user.name;
+            }
+            
+
             return token;
         },
         authorized( {request, auth}: any ) {
+            // Array of regex patterns of the paths we want to protect
+            const protectedPaths = [
+                /\/shipping-address/,
+                /\/payment-method/,
+                /\/place-order/,
+                /\/profile/,
+                /\/user\/(.*)/,
+                /\/admin\/(.*)/,
+                /\/order\/(.*)/,
+            ];
+
+            // Get the current path from the request URL object
+            const { pathname } = request.nextUrl;
+
+            // Check if user is not authenticated
+            if (!auth && protectedPaths.some((p) => p.test(pathname))) return false;
+
+
             // Check for session cart cookie
             if (!request.cookies.get('sessionCardId')) {
                 // Generate a new session cart id

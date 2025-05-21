@@ -19,4 +19,16 @@ export const signUpDefaultValues = {
   confirmPassword: "",
 };
 
+export const shippingAddressDefaultValues = {
+  fullName: "John Doe",
+  streetAddress: "123 Main Street, Apt 4B",
+  city: "New York",
+  postalCode: "10001",
+  country: "United States",
+  lat: 40.7128,
+  lng: -74.0060,
+};
+
+
+
   

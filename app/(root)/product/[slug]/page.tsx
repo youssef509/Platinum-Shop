@@ -80,7 +80,7 @@ const ProductDetailsPage = async (props: {
                             {product.stock > 0 && (
                                 <div className="mt-4">
                                     <AddToCart 
-                                    cart={cart} 
+                                    cart={cart ? { ...cart, sessionCardId: cart.sessionCardId ?? "" } : undefined}
                                     item={{
                                         productId: product.id,
                                         name: product.name,
