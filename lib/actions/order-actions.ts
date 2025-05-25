@@ -45,10 +45,20 @@ export async function createOrder() {
             totalPrice: cart.totalPrice,
         });
 
+        // Prepare data for Prisma (remove userId, add user relation)
+        const { userId: orderUserId, ...orderData } = order;
+
+        if (!orderUserId) throw new Error("Order userId is missing");
+
         // Create a transaction to create the order and order items in the database
-       const insertedOrderId = await prisma.$transaction(async (tx) => {
+        const insertedOrderId = await prisma.$transaction(async (tx) => {
             // Create the order
-          const insertedOrder = await tx.order.create({ data: order });
+            const insertedOrder = await tx.order.create({
+            data: {
+                ...orderData,
+                user: { connect: { id: orderUserId as string } },
+            }
+        });
           // Create the order items
           for (const item of cart.items as CartItem[]) {
             await tx.orderItem.create({
