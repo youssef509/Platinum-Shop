@@ -30,6 +30,7 @@ model Product {
   isFeatured  Boolean  @default(false)
   banner      String?
   createdAt   DateTime @default(now()) @db.Timestamp(6)
+  OrderItems  OrderItem[]
 }
 
 model User {
@@ -47,6 +48,7 @@ model User {
   account       Account[]
   session       Session[]
   Cart          Cart[]
+  orders        Order[]
 }
 
 model Account {
@@ -75,7 +77,7 @@ model Session {
   userId       String   @db.Uuid
   expires      DateTime @db.Timestamp(6)
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
+
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @updatedAt
 }
@@ -99,5 +101,38 @@ model Cart {
   taxPrice          Decimal  @default(0) @db.Decimal(12, 2)
   createdAt         DateTime @default(now()) @db.Timestamp(6)
   user              User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
 }
+
+model Order {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String    @db.Uuid
+  shippingAddress   Json      @db.Json
+  paymentMethod     String
+  paymentResult     Json?     @db.Json
+  itemsPrice        Decimal   @default(0) @db.Decimal(12, 2)
+  shippingPrice     Decimal   @default(0) @db.Decimal(12, 2)
+  taxPrice          Decimal   @default(0) @db.Decimal(12, 2)
+  totalPrice        Decimal   @default(0) @db.Decimal(12, 2)
+  isPaid            Boolean   @default(false)
+  paidAt            DateTime? @db.Timestamp(6)
+  isDelivered       Boolean   @default(false)
+  deliveredAt       DateTime? @db.Timestamp(6)
+  createdAt         DateTime  @default(now()) @db.Timestamp(6)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderitems        OrderItem[]   
+  }
+
+model OrderItem {
+  orderId   String    @db.Uuid
+  productId String    @db.Uuid
+  qty       Int
+  price     Decimal   @default(0) @db.Decimal(12, 2)
+  name      String
+  slug      String
+  image     String
+  order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  @@id([orderId, productId], map: "orderitems_orderId_productId_pk")
+}
+
+

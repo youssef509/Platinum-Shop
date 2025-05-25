@@ -29,6 +29,8 @@ export const shippingAddressDefaultValues = {
   lng: -74.0060,
 };
 
+export const PAYMENT_METHODS = process.env.PAYMENT_METHODS ? process.env.PAYMENT_METHODS.split(", ") : ["PayPal", "Stripe", "Cash on Delivery"];
+export const DEFAULT_PAYMENT_METHOD = process.env.DEFAULT_PAYMENT_METHOD || "PayPal";
 
 
   

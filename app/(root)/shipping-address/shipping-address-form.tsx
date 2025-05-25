@@ -130,36 +130,7 @@ const ShippingAddressForm = ( { address } : { address : ShippingAddress } ) => {
                             )}
                         />
                     </div>
-                    <div className="flex flex-col md:flex-row gap-5">
-                        <FormField
-                            control={form.control}
-                            name="lat"
-                            render={({ field } : { field : ControllerRenderProps<z.infer<typeof shippingAddressSchema>, 'lat'> }) => (
-                                <FormItem className="w-full">
-                                <FormLabel>Latitude</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Enter your latitude" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                    <div className="flex flex-col md:flex-row gap-5">
-                        <FormField
-                            control={form.control}
-                            name="lng"
-                            render={({ field } : { field : ControllerRenderProps<z.infer<typeof shippingAddressSchema>, 'lng'> }) => (
-                                <FormItem className="w-full">
-                                <FormLabel>Longitude</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Enter your longitude" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
+                    
                     <div className="flex gap-2">
                         <Button type="submit" disabled={isPending} variant="default">
                             {isPending ? <Loader className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
