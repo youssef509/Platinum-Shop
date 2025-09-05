@@ -7,8 +7,11 @@ import { formatCurrency, formatDateTime, formatId } from "@/lib/utils";
 import { Order } from "@/types";
 import Link from "next/link";
 import Image from "next/image";
+import { useToast } from "@/hooks/use-toast";
+import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer } from "@paypal/react-paypal-js"; 
+import { createPayPalOrder, approvePayPalOrder  } from "@/lib/actions/order-actions";
 
-const OrderDetailsTable = ({ order } : { order: Order}) => {
+const OrderDetailsTable = ({ order, paypalClientId } : { order: Order, paypalClientId: string }) => {
     const {
         shippingAddress,
         orderitems,
@@ -22,6 +25,42 @@ const OrderDetailsTable = ({ order } : { order: Order}) => {
         paidAt,
         deliveredAt,
     } = order;
+
+    const { toast } = useToast();
+
+    const PrintLoadingState = () => {
+        const [{ isPending, isRejected }] = usePayPalScriptReducer();
+        let status = "";
+        if (isPending) {
+            status = "pending";
+        } else if (isRejected) {
+            status = "Error in loading PayPal, Rejected";
+        }
+        return status;
+    }
+
+    const handleCreatePayPalOrder = async () => {
+        const res = await createPayPalOrder(order.id);
+        if (!res.success) {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: res.message || 'Could not create PayPal order',
+            });
+        }
+        return res.data;
+    }
+
+    const handleApprovePayPalOrder = async (data: { orderID: string; }) => {
+        const res = await approvePayPalOrder(order.id, { orderId: data.orderID });
+
+        toast({
+            variant: res.success ? 'default' : 'destructive',
+            title: res.success ? 'Success' : 'Error',
+            description: res.message || (res.success ? 'Order paid successfully' : 'Could not process PayPal payment'),
+        });
+    }
+
     return <>
        <h1 className="py-4 text-2xl">Order { formatId(order.id)}</h1>
        <div className="grid md:grid-cols-3 md:gap-5">
@@ -111,6 +150,18 @@ const OrderDetailsTable = ({ order } : { order: Order}) => {
                         <div>Total</div>
                         <div>{ formatCurrency(totalPrice) }</div>
                     </div>
+                    {/* PayPal Payment */}
+                    {!isPaid && paymentMethod === 'PayPal' && (
+                        <div>
+                            <PayPalScriptProvider options={{ clientId: paypalClientId }}>
+                                <PrintLoadingState />
+                                <PayPalButtons 
+                                    createOrder={handleCreatePayPalOrder} 
+                                    onApprove={handleApprovePayPalOrder} 
+                                />
+                            </PayPalScriptProvider>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>
