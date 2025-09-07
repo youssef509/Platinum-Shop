@@ -38,7 +38,7 @@ jobs:
       run: npm run build
       
     - name: Deploy to server
-      uses: appleboy/ssh-action@v0.1.5
+      uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
@@ -47,8 +47,10 @@ jobs:
         script: |
           cd /home/platinumapp/private/Platinum-Shop
           git pull origin main
-          npm ci
-          npm run build
+          
+          # Use sureapp to run Node.js commands
+          sureapp project shell Platinum-Shop -c "npm ci"
+          sureapp project shell Platinum-Shop -c "npm run build"
           
           # Create/update .env file with production variables
           cat > .env << 'EOF'
@@ -69,8 +71,8 @@ jobs:
           PAYPAL_SECRET="${{ secrets.PAYPAL_SECRET }}"
           EOF
           
-          # Restart the application (adjust this command based on how you start your app)
-          pkill -f "next start" || true
-          nohup npm start > app.log 2>&1 &
+          # Restart the application using sureapp
+          sureapp project shell Platinum-Shop -c "pkill -f 'next start' || true"
+          sureapp project shell Platinum-Shop -c "nohup npm start > app.log 2>&1 &"
           
           echo "Deployment completed successfully!"
