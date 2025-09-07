@@ -1,9 +1,15 @@
 name: Deploy to Production
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - production
 
 jobs:
   deploy:
@@ -45,7 +51,7 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.PORT }}
         script: |
-          cd /home/platinumapp/private/Platinum-Shop
+          cd ~/private/Platinum-Shop
           git pull origin main
           
           # Use sureapp to run Node.js commands
