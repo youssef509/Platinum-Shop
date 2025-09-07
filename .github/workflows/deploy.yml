@@ -1,0 +1,61 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build application
+      run: npm run build
+      
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          cd /home/platinumapp/private/Platinum-Shop
+          git pull origin main
+          npm ci
+          npm run build
+          
+          # Create/update .env file with production variables
+          cat > .env << 'EOF'
+          NEXT_PUBLIC_APP_NAME="Platinum Shop"
+          NEXT_PUBLIC_APP_DESCRIPTION="A modern e-commerce store built with Next.js and Tailwind CSS"
+          NEXT_PUBLIC_SERVER_URLL="https://paltinum-shop.platinum-app.com"
+          DATABASE_URL="${{ secrets.DATABASE_URL }}"
+          NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}"
+          NEXTAUTH_URL="https://paltinum-shop.platinum-app.com"
+          NEXTAUTH_URL_INTERNAL="https://paltinum-shop.platinum-app.com"
+          PAYMENT_METHODS="PayPal, Stripe, Cash on Delivery"
+          DEFAULT_PAYMENT_METHOD="PayPal"
+          PAYPAL_API_URL="https://api-m.sandbox.paypal.com"
+          PAYPAL_CLIENT_ID="${{ secrets.PAYPAL_CLIENT_ID }}"
+          PAYPAL_SECRET="${{ secrets.PAYPAL_SECRET }}"
+          EOF
+          
+          # Restart the application (adjust this command based on how you start your app)
+          pkill -f "next start" || true
+          nohup npm start > app.log 2>&1 &
+          
+          echo "Deployment completed successfully!"
