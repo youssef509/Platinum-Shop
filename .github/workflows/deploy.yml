@@ -54,9 +54,12 @@ jobs:
           cat > .env << 'EOF'
           NEXT_PUBLIC_APP_NAME="Platinum Shop"
           NEXT_PUBLIC_APP_DESCRIPTION="A modern e-commerce store built with Next.js and Tailwind CSS"
+          NEXT_PUBLIC_SERVER_URL="https://paltinum-shop.platinum-app.com"
           NEXT_PUBLIC_SERVER_URLL="https://paltinum-shop.platinum-app.com"
           DATABASE_URL="${{ secrets.DATABASE_URL }}"
           NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}"
+          NEXTAUTH_URL="https://paltinum-shop.platinum-app.com"
+          NEXTAUTH_URL_INTERNAL="https://paltinum-shop.platinum-app.com"
           NEXTAUTH_URL="https://paltinum-shop.platinum-app.com"
           NEXTAUTH_URL_INTERNAL="https://paltinum-shop.platinum-app.com"
           PAYMENT_METHODS="PayPal, Stripe, Cash on Delivery"

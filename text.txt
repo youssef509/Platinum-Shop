@@ -1,0 +1,17 @@
+cat > .env << 'EOF'
+NEXT_PUBLIC_APP_NAME="Platinum Shop"
+NEXT_PUBLIC_APP_DESCRIPTION="A modern e-commerce store built with Next.js and Tailwind CSS"
+NEXT_PUBLIC_SERVER_URLL="https://paltinum-shop.platinum-app.com"
+DATABASE_URL="postgres://neondb_owner:npg_mc5eS9Vukpzs@ep-lucky-mode-a4jpsi2v-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require"
+NEXTAUTH_SECRET="wyD4aGzoTPcIwJiHPODlyefbDKJQPYBBQNrxZ7nVGOI="
+NEXTAUTH_URL="https://paltinum-shop.platinum-app.com"
+NEXTAUTH_URL_INTERNAL="https://paltinum-shop.platinum-app.com"
+PAYMENT_METHODS="PayPal, Stripe, Cash on Delivery"
+DEFAULT_PAYMENT_METHOD="PayPal"
+PAYPAL_API_URL="https://api-m.sandbox.paypal.com"
+PAYPAL_CLIENT_ID="AZgTNsPbNpySmqcWCLXOOJEz_oIHVaOt07uBC9HKpH5uJ3ChffslLY7QGAQPXUn4qGER7MLIpdwc7YvD"
+PAYPAL_SECRET="EOVYGWw3WESNUVocJgRxpn0j6JRKbeIXFbmtwzvk5bYOl33WP2ik4MisA1xYYhe2Ki0qP73tx_3ctBNN"
+EOF
+
+
+ssh-keygen -t rsa -b 4096 -C "github-actions@youssef201.dev@gmail.com" -f github-actions-key
