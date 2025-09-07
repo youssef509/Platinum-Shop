@@ -23,6 +23,18 @@ jobs:
       run: npm ci
       
     - name: Build application
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+        NEXTAUTH_URL: "https://paltinum-shop.platinum-app.com"
+        NEXT_PUBLIC_APP_NAME: "Platinum Shop"
+        NEXT_PUBLIC_APP_DESCRIPTION: "A modern e-commerce store built with Next.js and Tailwind CSS"
+        NEXT_PUBLIC_SERVER_URL: "https://paltinum-shop.platinum-app.com"
+        PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
+        PAYPAL_SECRET: ${{ secrets.PAYPAL_SECRET }}
+        PAYPAL_API_URL: "https://api-m.sandbox.paypal.com"
+        PAYMENT_METHODS: "PayPal, Stripe, Cash on Delivery"
+        DEFAULT_PAYMENT_METHOD: "PayPal"
       run: npm run build
       
     - name: Deploy to server
