@@ -14,71 +14,87 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: ${{ github.workflow }}
+      cancel-in-progress: true
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
+    - name: Prepare deployment files
+      run: |
+        rm -rf .git
+        rm -rf .github
+        rm -rf .vscode
+        rm -rf node_modules
+        rm -rf package-lock.json
+        rm -rf .env
+        rm -rf .next
         
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Build application
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-        NEXTAUTH_URL: "https://paltinum-shop.platinum-app.com"
-        NEXT_PUBLIC_APP_NAME: "Platinum Shop"
-        NEXT_PUBLIC_APP_DESCRIPTION: "A modern e-commerce store built with Next.js and Tailwind CSS"
-        NEXT_PUBLIC_SERVER_URL: "https://paltinum-shop.platinum-app.com"
-        PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
-        PAYPAL_SECRET: ${{ secrets.PAYPAL_SECRET }}
-        PAYPAL_API_URL: "https://api-m.sandbox.paypal.com"
-        PAYMENT_METHODS: "PayPal, Stripe, Cash on Delivery"
-        DEFAULT_PAYMENT_METHOD: "PayPal"
-      run: npm run build
-      
-    - name: Deploy to server
+    - name: Create .env file
+      run: |
+        cat > .env << 'EOF'
+        DATABASE_URL=${{ secrets.DATABASE_URL }}
+        DEFAULT_PAYMENT_METHOD=${{ secrets.DEFAULT_PAYMENT_METHOD }}
+        NEXT_PUBLIC_APP_DESCRIPTION=${{ secrets.NEXT_PUBLIC_APP_DESCRIPTION }}
+        NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME }}
+        NEXT_PUBLIC_SERVER_URL=${{ secrets.NEXT_PUBLIC_SERVER_URL }}
+        NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+        NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
+        NEXTAUTH_URL_INTERNAL=${{ secrets.NEXTAUTH_URL_INTERNAL }}
+        PAYMENT_METHODS=${{ secrets.PAYMENT_METHODS }}
+        PAYPAL_API_URL=${{ secrets.PAYPAL_API_URL }}
+        PAYPAL_CLIENT_ID=${{ secrets.PAYPAL_CLIENT_ID }}
+        PAYPAL_SECRET=${{ secrets.PAYPAL_SECRET }}
+        EOF
+        
+    - name: Upload Files
+      uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      with:
+        username: ${{ secrets.USERNAME }}
+        server: ${{ secrets.HOST }}
+        ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.PORT }}
+        local_path: './'
+        remote_path: '~/private/Platinum-Shop'
+        
+    - name: Build and restart server
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.PORT }}
+        script_stop: false
         script: |
+          set -e  # Exit on any error
+          echo "Navigating to application directory..."
           cd ~/private/Platinum-Shop
-          git pull origin main
-          
-          # Use sureapp to run Node.js commands
-          sureapp project shell Platinum-Shop -c "npm ci"
+
+          echo "Cleaning previous build..."
+          rm -rf .next node_modules .cache package-lock.json
+
+          echo "Installing dependencies..."
+          sureapp project shell Platinum-Shop -c "npm install"
+
+          echo "Generating Prisma client..."
+          sureapp project shell Platinum-Shop -c "npx prisma generate"
+
+          echo "Building application..."
           sureapp project shell Platinum-Shop -c "npm run build"
-          
-          # Create/update .env file with production variables
-          cat > .env << 'EOF'
-          NEXT_PUBLIC_APP_NAME="Platinum Shop"
-          NEXT_PUBLIC_APP_DESCRIPTION="A modern e-commerce store built with Next.js and Tailwind CSS"
-          NEXT_PUBLIC_SERVER_URL="https://paltinum-shop.platinum-app.com"
-          NEXT_PUBLIC_SERVER_URLL="https://paltinum-shop.platinum-app.com"
-          DATABASE_URL="${{ secrets.DATABASE_URL }}"
-          NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}"
-          NEXTAUTH_URL="https://paltinum-shop.platinum-app.com"
-          NEXTAUTH_URL_INTERNAL="https://paltinum-shop.platinum-app.com"
-          NEXTAUTH_URL="https://paltinum-shop.platinum-app.com"
-          NEXTAUTH_URL_INTERNAL="https://paltinum-shop.platinum-app.com"
-          PAYMENT_METHODS="PayPal, Stripe, Cash on Delivery"
-          DEFAULT_PAYMENT_METHOD="PayPal"
-          PAYPAL_API_URL="https://api-m.sandbox.paypal.com"
-          PAYPAL_CLIENT_ID="${{ secrets.PAYPAL_CLIENT_ID }}"
-          PAYPAL_SECRET="${{ secrets.PAYPAL_SECRET }}"
-          EOF
-          
-          # Restart the application using sureapp
+
+          echo "Stopping existing application..."
           sureapp project shell Platinum-Shop -c "pkill -f 'next start' || true"
+          
+          echo "Starting application..."
           sureapp project shell Platinum-Shop -c "nohup npm start > app.log 2>&1 &"
           
+          echo "Waiting for application to start..."
+          sleep 5
+          
+          echo "Checking if application is running..."
+          sureapp project shell Platinum-Shop -c "pgrep -f 'next start' || echo 'Warning: Process not found'"
+
           echo "Deployment completed successfully!"
