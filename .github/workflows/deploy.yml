@@ -58,7 +58,7 @@ jobs:
         ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.PORT }}
         local_path: './'
-        remote_path: '~/private/Platinum-Shop'
+        remote_path: '/home/${{ secrets.USERNAME }}/private/Platinum-Shop'
         
     - name: Build and restart server
       uses: appleboy/ssh-action@v1.0.3
@@ -71,7 +71,7 @@ jobs:
         script: |
           set -e  # Exit on any error
           echo "Navigating to application directory..."
-          cd ~/private/Platinum-Shop
+          cd /home/${{ secrets.USERNAME }}/private/Platinum-Shop
 
           echo "Cleaning previous build..."
           rm -rf .next node_modules .cache package-lock.json
