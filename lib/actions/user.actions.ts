@@ -164,4 +164,3 @@ export async function updateProfile(user: { name: string; email: string}) {
     } catch (error) {
         return {success: false, message: formatError(error)};
     }
-}
