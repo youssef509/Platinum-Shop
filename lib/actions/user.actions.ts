@@ -10,7 +10,7 @@ import { cookies } from "next/headers";
 import { shippingAddressSchema, 
     signInFormSchema, 
     signUpFormSchema,
-    paymentMethodSchema,
+    paymentMethodSchema
 } from "../validators";
 import { z } from "zod";
 
@@ -164,3 +164,4 @@ export async function updateProfile(user: { name: string; email: string}) {
     } catch (error) {
         return {success: false, message: formatError(error)};
     }
+}
