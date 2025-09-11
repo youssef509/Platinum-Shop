@@ -56,6 +56,14 @@ const UserButton = async () => {
                     </Link>
                 </DropdownMenuItem>
 
+                { session?.user?.role === 'admin' && (
+                    <DropdownMenuItem>
+                        <Link href="/admin/overview" className="w-full">
+                            Admin Dashboard
+                        </Link>
+                    </DropdownMenuItem>
+                )}
+
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="p-0 mb-1">
                     <Button variant="destructive" className="w-full" onClick={signOutUser}>
