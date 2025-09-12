@@ -1,3 +1,5 @@
+import { Metadata } from "next";
+
 const AdminOverviewPage = () => {
     return (
         <div>
