@@ -291,3 +291,25 @@ export async function getOrderSummary() {
     };
 
 }
+
+// Get all orders for admin
+export async function getAllOrders({limit = PAGE_SIZE, page,}: { limit?: number; page: number; }) {
+    const session = await auth();
+    if (!session) throw new Error("User not authenticated");
+    if (!session.user || !session.user.id) {
+        throw new Error("User ID not found in session");
+    }
+    const data = await prisma.order.findMany({
+        take: limit,
+        skip: (page - 1) * limit,
+        orderBy: { createdAt: "desc" },
+        include: { user: { select: { name: true } } }
+    });
+
+    const dataCount = await prisma.order.count();
+
+    return {
+        data,
+        totalPages: Math.ceil(dataCount / limit),
+    };
+}
