@@ -4,8 +4,14 @@ import { prisma } from "@/db/prisma";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compareSync } from "bcrypt-ts-edge";
 import type { NextAuthConfig } from "next-auth";
-import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+
+// Extended user type for our app
+interface ExtendedUser {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    role: "user" | "admin";
+}
 
 export const config = {
     trustHost: true,
@@ -16,7 +22,6 @@ export const config = {
     session: {
         strategy: "jwt",
         maxAge: 30 * 24 * 60 * 60, // for 30 days
-        //     30days*24hours*60min*60sec                  
     }, 
     adapter: PrismaAdapter(prisma),
     providers: [
@@ -48,16 +53,15 @@ export const config = {
                         };
                     }
                 }
-                // if user or password dosn't match
+                // if user or password doesn't match
                 return null;
             }
         })
     ],
     callbacks: {
-         async session({ session, user, trigger, token, }: any) {
-
-            session.user.id = token.sub;
-            session.user.role = token.role;
+        async session({ session, token, trigger }) {
+            session.user.id = token.sub!;
+            session.user.role = token.role as "user" | "admin";
             session.user.name = token.name;
 
             if (trigger === "update") {
@@ -65,47 +69,23 @@ export const config = {
             }
             return session
         },
-        async jwt({ token, user, trigger, session }: any) {
+        async jwt({ token, user, trigger, session }) {
             if (user) {
-                token.id = user.id;
-                token.role = user.role;
-                if (user.name === "NO_NAME") {
-                    token.name = user.email!.split("@")[0];
+                const extendedUser = user as ExtendedUser;
+                token.id = extendedUser.id;
+                token.role = extendedUser.role;
+                if (extendedUser.name === "NO_NAME") {
+                    token.name = extendedUser.email!.split("@")[0];
                 }
-                await prisma.user.update({
-                    where: {
-                        id: user.id
-                    },
-                    data: {
-                        name: token.name,
-                    }
-                });
+                
+                // Trigger server-side operations for sign-in/sign-up
                 if (trigger === "signIn" || trigger === "signUp") {
-                    const cookiesObject = await cookies();
-                    const sessionCardId = cookiesObject.get('sessionCardId')?.value;
-                    if (sessionCardId) {
-                        const sessionCard = await prisma.cart.findFirst({
-                            where: { sessionCardId }
-                        });
-                        if (sessionCard) {
-                            await prisma.cart.deleteMany({
-                                where: { userId: user.id }
-                            });
-                            await prisma.cart.update({
-                                where: { id: sessionCard.id },
-                                data: { userId: user.id, }
-                            })
-                            // Delete the session cart id cookie
-                            cookiesObject.delete('sessionCardId');
-                        } 
-                    }
+                    // We'll handle heavy operations like cart merging and user updates
+                    // in the client-side after successful sign-in
+                    // This keeps the JWT callback lightweight
                 }
             }
-            // Handel session updates
-            if (session?.user.name && trigger === "update") {
-                token.name = session.user.name;
-            }
-
+            
             // Handle session updates
             if (session?.user.name && trigger === "update") {
                 token.name = session.user.name;
@@ -113,46 +93,6 @@ export const config = {
 
             return token;
         },
-        authorized( {request, auth}: any ) {
-            // Array of regex patterns of the paths we want to protect
-            const protectedPaths = [
-                /\/shipping-address/,
-                /\/payment-method/,
-                /\/place-order/,
-                /\/profile/,
-                /\/user\/(.*)/,
-                /\/admin\/(.*)/,
-                /\/order\/(.*)/,
-            ];
-
-            // Get the current path from the request URL object
-            const { pathname } = request.nextUrl;
-
-            // Check if user is not authenticated
-            if (!auth && protectedPaths.some((p) => p.test(pathname))) return false;
-
-
-            // Check for session cart cookie
-            if (!request.cookies.get('sessionCardId')) {
-                // Generate a new session cart id
-                const sessionCardId = crypto.randomUUID();
-                
-                // Clone the request headers
-                const newRequestHeaders = new Headers(request.headers);
-
-                // Create new response and  add the new headers
-                const response = NextResponse.next({
-                    request: {
-                        headers: newRequestHeaders,
-                    },
-                });
-                // Set newly generated session cart id in the response cookies
-                response.cookies.set('sessionCardId', sessionCardId );
-                return response;
-            } else {
-                return true;
-            }
-        }
     },
 } satisfies NextAuthConfig;
 
