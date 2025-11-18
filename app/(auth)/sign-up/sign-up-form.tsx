@@ -5,10 +5,11 @@ import { Label } from "@radix-ui/react-dropdown-menu";
 import { signUpDefaultValues } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import {  useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import { signUpUser } from "@/lib/actions/user.actions";
 import { useSearchParams } from "next/navigation";
+import { handlePostSignIn } from "@/lib/post-auth-utils";
 
 const SignUpForm = () => {
     const [data, action] = useActionState(signUpUser, {
@@ -19,16 +20,23 @@ const SignUpForm = () => {
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get('callbackUrl') || '/';
 
+    // Handle post-authentication operations when sign-up is successful
+    useEffect(() => {
+        if (data?.success) {
+            handlePostSignIn().catch(console.error);
+        }
+    }, [data?.success]);
 
-const SignUpButton = () => {
-    const { pending } = useFormStatus();
+    const SignUpButton = () => {
+        const { pending } = useFormStatus();
 
-    return (
-        <Button disabled={pending} className="w-full" variant="default">
-            { pending ? 'Submitting...' : 'Sign Up'}
-        </Button>
-    )
-}
+        return (
+            <Button disabled={pending} className="w-full" variant="default">
+                { pending ? 'Submitting...' : 'Sign Up'}
+            </Button>
+        )
+    }
+    
     return <form action={action}>
         <input type="hidden" name="callbackUrl" value={callbackUrl} />
         <div className="space-y-6">

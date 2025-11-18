@@ -313,3 +313,65 @@ export async function getAllOrders({limit = PAGE_SIZE, page,}: { limit?: number;
         totalPages: Math.ceil(dataCount / limit),
     };
 }
+
+// Delete an order
+export async function deleteOrder(orderId: string) {
+    try {
+        // Delete the order
+        await prisma.order.delete({
+            where: { id: orderId }
+        });
+
+        // Revalidate the admin orders page to reflect the deletion
+        revalidatePath('/admin/orders');
+
+        return { success: true, message: "Order deleted successfully" };
+    } catch (error) {
+        return { success: false, message: formatError(error) };
+    }
+}
+
+// Update COD order to paid
+export async function updateOrderToPaidCOD(orderId: string) {
+    try {
+        // Update the order status to paid
+        await updateOrderToPaid({ orderId });
+
+        // Revalidate the admin orders page to reflect the update
+        revalidatePath('/admin/orders');
+
+        return { success: true, message: "Order updated to paid successfully" };
+    } catch (error) {
+        return { success: false, message: formatError(error) };
+    }
+}
+
+
+// Update COD order to delivered
+export async function deliverOrder(orderId: string) {
+    try {
+        // Get the order from the database
+        const order = await prisma.order.findFirst({
+            where: { id: orderId },
+        });
+        if (!order) throw new Error("Order not found");
+        if (!order.isPaid) throw new Error("Order is not paid yet");
+        if (order.isDelivered) throw new Error("Order is already delivered");
+
+        // Update the order status to delivered
+        await prisma.order.update({
+            where: { id: orderId },
+            data: { 
+                isDelivered: true,
+                deliveredAt: new Date()
+            }
+        });
+
+        // Revalidate the admin orders page to reflect the update
+        revalidatePath('/admin/orders');
+
+        return { success: true, message: "Order updated to delivered successfully" };
+    } catch (error) {
+        return { success: false, message: formatError(error) };
+    }
+}
